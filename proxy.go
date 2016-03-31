@@ -34,9 +34,9 @@ func (p *Proxy) SetPort(port string) {
 func NewUnstartedProxy(latency time.Duration, backend HTTPTestServer) *Proxy {
 
 	middleFunc := func(w http.ResponseWriter, r *http.Request) {
-		<-time.Tick(latency)
+		<-time.After(latency)
 		func(w http.ResponseWriter, r *http.Request) {
-			<-time.Tick(latency)
+			<-time.After(latency)
 			s, ok := backend.(*httptest.Server)
 			if ok {
 				s.Config.Handler.ServeHTTP(w, r)

@@ -1,4 +1,4 @@
-package robin
+package relay
 
 import (
 	"io/ioutil"
@@ -10,17 +10,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var (
-	helloHandler = func(w http.ResponseWriter, r *http.Request) {
+var helloHandler = func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Hello client!")
-	}
-	goodDayHandler = func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Good day client!")
-	}
-	palomaHandler = func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Paloma client!")
-	}
-)
+}
 
 func TestBasicProxyConnection(t *testing.T) {
 	
@@ -33,7 +25,10 @@ func TestBasicProxyConnection(t *testing.T) {
 			
 			Convey("WITH a basic GET request to the front-end proxy", func() {
 				resp, err := http.Get(proxy.URL)
-				
+				if err != nil {
+					t.Error(err)
+				}
+
 				Convey("EXPECT error to be nil", func() {
 					So(err, ShouldBeNil)
 				})
@@ -107,90 +102,5 @@ func TestBasicProxyConnection(t *testing.T) {
 	})
 }
 
-func TestBasicSwitcherConnection(t *testing.T) {
-	
-	Convey("GIVEN a few backend servers", t, func() {
-		backends := []HTTPTestServer{
-			httptest.NewServer(http.HandlerFunc(helloHandler)),
-			httptest.NewServer(http.HandlerFunc(goodDayHandler)),
-			httptest.NewServer(http.HandlerFunc(palomaHandler)),
-		}
-		
-		Convey("GIVEN a frontend switcher", func() {
-			latency := time.Duration(0) * time.Second
-			sw := NewSwitcher(latency, backends)
 
-			responses := []string{
-				"Hello client!",
-				"Good day client!",
-				"Paloma client!",
-			}
-
-			Convey("WITH a first GET request to the switcher", func() {
-				resp, err := http.Get(sw.URL)
-
-				Convey("EXPECT error to be nil", func() {
-					So(err, ShouldBeNil)
-				})
-				Convey("EXPECT `Hello client!` from the first backend server", func() {
-					b, err := ioutil.ReadAll(resp.Body)
-					if err != nil {
-						t.Error(err)
-					}
-					So(string(b), ShouldEqual, responses[0])
-				})
-			})
-
-			Convey("WITH a second GET request to the switcher", func() {
-				resp, err := http.Get(sw.URL)
-
-				Convey("EXPECT error to be nil", func() {
-					So(err, ShouldBeNil)
-				})
-				Convey("EXPECT `Good day client!` from the second backend server", func() {
-					b, err := ioutil.ReadAll(resp.Body)
-					if err != nil {
-						t.Error(err)
-					}
-					So(string(b), ShouldEqual, responses[1])
-				})
-			})
-
-			Convey("WITH a third GET request to the switcher", func() {
-				resp, err := http.Get(sw.URL)
-
-				Convey("EXPECT error to be nil", func() {
-					So(err, ShouldBeNil)
-				})
-				Convey("EXPECT `Paloma client!` from the third backend server", func() {
-					b, err := ioutil.ReadAll(resp.Body)
-					if err != nil {
-						t.Error(err)
-					}
-					So(string(b), ShouldEqual, responses[2])
-				})
-			})
-
-			Convey("WITH a forth GET request to the switcher", func() {
-				resp, err := http.Get(sw.URL)
-
-				Convey("EXPECT error to be nil", func() {
-					So(err, ShouldBeNil)
-				})
-				Convey("EXPECT `Hello client!` from the first backend server", func() {
-					b, err := ioutil.ReadAll(resp.Body)
-					if err != nil {
-						t.Error(err)
-					}
-					So(string(b), ShouldEqual, responses[2])
-				})
-			})
-		})
-		Reset(func() {
-			for _, ts := range backends {
-				ts.Close()
-			}
-		})
-	})
-}
 

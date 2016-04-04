@@ -1,4 +1,8 @@
-package robin
+// Copyright 2016 Jo Chasinga. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package relay
 
 import (
 	"fmt"
@@ -8,6 +12,7 @@ import (
 	"time"
 )
 
+// HTTPTestServer is an interface which all instances including httptest.Server implement.
 type HTTPTestServer interface {
 	Close()
 	CloseClientConnections()
@@ -15,12 +20,16 @@ type HTTPTestServer interface {
 	StartTLS()
 }
 
+// A Proxy is an HTTPTestServer placed in front of another
+// HTTPTestServer to simulate a real proxy server or a connection with latency.
 type Proxy struct {
 	*httptest.Server
 	Latency time.Duration
 	Backend HTTPTestServer
 }
 
+// SetPort optionally sets a local port number a Proxy should listen on.
+// It should be set on an unstarted proxy only.
 func (p *Proxy) SetPort(port string) {
 	l, err := net.Listen("tcp", "127.0.0.1:" + port)
 	if err != nil {
@@ -31,8 +40,8 @@ func (p *Proxy) SetPort(port string) {
 	p.Server.Listener = l
 }
 
+// NewUnstartedProxy Start an unstarted proxy instance.
 func NewUnstartedProxy(latency time.Duration, backend HTTPTestServer) *Proxy {
-
 	middleFunc := func(w http.ResponseWriter, r *http.Request) {
 		<-time.After(latency)
 		func(w http.ResponseWriter, r *http.Request) {
@@ -46,9 +55,7 @@ func NewUnstartedProxy(latency time.Duration, backend HTTPTestServer) *Proxy {
 			}
 		}(w, r)
 	}
-	
 	middleServer := httptest.NewUnstartedServer(http.HandlerFunc(middleFunc))
-
 	proxy := &Proxy{
 		Server:  middleServer,
 		Latency: latency,
@@ -57,6 +64,7 @@ func NewUnstartedProxy(latency time.Duration, backend HTTPTestServer) *Proxy {
 	return proxy
 }
 
+// NewProxy starts and run a proxy instance.
 func NewProxy(latency time.Duration, backend HTTPTestServer) *Proxy {
 	proxy := NewUnstartedProxy(latency, backend)
 	proxy.Start()

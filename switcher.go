@@ -1,4 +1,4 @@
-package robin
+package relay
 
 import (
 	"fmt"
@@ -6,16 +6,25 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"time"
+	"sync"
+	"runtime"
 )
 
+// A Switcher is an HTTPTestServer placed in front of another HTTPTestServer's
+// to simulate a round-robin load-balancer.
 type Switcher struct {
 	*httptest.Server
 	Latency time.Duration
-//	Last HTTPTestServer
-//	Current HTTPTestServer
 	Backends []HTTPTestServer
 }
 
+var (
+	currentServerId int
+	mutex = &sync.Mutex{}
+)
+
+// SetPort optionally sets a local port number a Switcher should listen on.
+// It should be set on an unstarted switcher only.
 func (s *Switcher) SetPort(port string) {
 	l, err := net.Listen("tcp", "127.0.0.1:" + port)
 	if err != nil {
@@ -26,26 +35,29 @@ func (s *Switcher) SetPort(port string) {
 	s.Listener = l
 }
 
-var currentServerId = 0
-
+// backendGenerator keeps track of the backend servers circulation.
 func backendGenerator(backends []HTTPTestServer) <-chan HTTPTestServer {
 	c := make(chan HTTPTestServer)
-	id := currentServerId
 	go func() <-chan HTTPTestServer {
 		defer close(c)
-		c <- backends[id]
+		mutex.Lock()
+		c <- backends[currentServerId]
+		mutex.Unlock()
 		if currentServerId == len(backends) - 1 {
 			currentServerId = 0
 			return c
 		}
+		mutex.Lock()
 		currentServerId++
+		mutex.Unlock()
+		runtime.Gosched()
 		return c
 	}()
 	return c
 }
 
+// NewUnstartedProxy Start an unstarted proxy instance. 
 func NewUnstartedSwitcher(latency time.Duration, backends []HTTPTestServer) *Switcher {
-
 	middleFunc := func(w http.ResponseWriter, r *http.Request) {
 		<-time.After(latency)
 		func(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +74,6 @@ func NewUnstartedSwitcher(latency time.Duration, backends []HTTPTestServer) *Swi
 	}
 
 	middleServer := httptest.NewUnstartedServer(http.HandlerFunc(middleFunc))
-
 	sw := &Switcher{
 		Server:  middleServer,
 		Latency: latency,
@@ -71,6 +82,7 @@ func NewUnstartedSwitcher(latency time.Duration, backends []HTTPTestServer) *Swi
 	return sw
 }
 
+// NewProxy starts and run a proxy instance. 
 func NewSwitcher(latency time.Duration, backends []HTTPTestServer) *Switcher {
 	sw := NewUnstartedSwitcher(latency, backends)
 	sw.Start()

@@ -67,8 +67,10 @@ resp, _ := client.Get(p1.URL)
 In the above code, Each hop to and from the target server `ts` will be delayed 
 for one second, total to six seconds of latency.
 
-Switcher works similarly to a proxy, except it "switches" between several backend servers
-for each request in a round-robin fashion.
+Switcher
+--------
+
+`Switcher` works similarly to a proxy, except with each request it "switches" between several backend servers in a round-robin fashion.
 
 ```go
 
@@ -89,6 +91,7 @@ sw := relay.NewSwitcher(delay, []HTTPTestServer{ts1, ts2, p})
 resp1, _ := http.Get(sw.URL) // hits ts1
 resp2, _ := http.Get(sw.URL) // hits ts2
 resp3, _ := http.Get(sw.URL) // hits p, which eventually hits ts3
+resp4, _ := http.Get(sw.URL) // hits ts1
 
 ```
 

@@ -22,8 +22,33 @@ var (
 	}
 )
 
+func TestBasicSwitcherUtility(t *testing.T) {
+	Convey("GIVEN an unstarted switcher", t, func() {
+		delay := time.Duration(0)
+		ts := httptest.NewServer(http.HandlerFunc(helloHandler))
+		sw := NewUnstartedSwitcher(delay, []HTTPTestServer{ ts })
+		Convey("WITH a call to `Start()`", func() {
+			sw.Start()
+			Convey("EXPECT proxy to be running", func() {
+				resp, _ := http.Get(sw.URL)
+				So(resp, ShouldNotBeNil)
+			})
+		})
+		Convey("WITH a call to `Close()`", func() {
+			sw.Close()
+			Convey("EXPECT proxy to be closed", func() {
+				_, err := http.Get(sw.URL)
+				So(err, ShouldNotBeNil)
+			})
+		})
+		Reset(func() {
+			ts.Close()
+			sw.Close()
+		})
+	})
+}
+
 func TestBasicSwitcherConnection(t *testing.T) {
-	
 	Convey("GIVEN a few backend servers", t, func() {
 		backends := []HTTPTestServer{
 			httptest.NewServer(http.HandlerFunc(helloMarsHandler)),
@@ -34,13 +59,11 @@ func TestBasicSwitcherConnection(t *testing.T) {
 		Convey("GIVEN a frontend switcher", func() {
 			latency := time.Duration(0) * time.Second
 			sw := NewSwitcher(latency, backends)
-
 			responses := []string{
 				"Hello Mars client!",
 				"Good day client!",
 				"Paloma client!",
 			}
-
 			Convey("WITH a first GET request to the switcher", func() {
 				resp, err := http.Get(sw.URL)
 				// TODO: Handling error here instead of asserting it.
@@ -62,7 +85,6 @@ func TestBasicSwitcherConnection(t *testing.T) {
 					So(string(b), ShouldEqual, responses[0])
 				})
 			})
-
 			Convey("WITH a second GET request to the switcher", func() {
 				resp, err := http.Get(sw.URL)
 				// TODO: Handling error here instead of asserting it.
@@ -84,7 +106,6 @@ func TestBasicSwitcherConnection(t *testing.T) {
 					So(string(b), ShouldEqual, responses[1])
 				})
 			})
-
 			Convey("WITH a third GET request to the switcher", func() {
 				resp, err := http.Get(sw.URL)
 				// TODO: Handling error here instead of asserting it.
@@ -106,7 +127,6 @@ func TestBasicSwitcherConnection(t *testing.T) {
 					So(string(b), ShouldEqual, responses[2])
 				})
 			})
-
 			Convey("WITH a forth GET request to the switcher", func() {
 				resp, err := http.Get(sw.URL)
 				// TODO: Handling error here instead of asserting it.
@@ -128,7 +148,6 @@ func TestBasicSwitcherConnection(t *testing.T) {
 					So(string(b), ShouldEqual, responses[0])
 				})
 			})
-
 			Convey("WITH a fifth GET request to the switcher", func() {
 				resp, err := http.Get(sw.URL)
 				// TODO: Handling error here instead of asserting it.
@@ -149,6 +168,9 @@ func TestBasicSwitcherConnection(t *testing.T) {
 					}
 					So(string(b), ShouldEqual, responses[1])
 				})
+			})
+			Reset(func() {
+				sw.Close()
 			})
 		})
 		Reset(func() {

@@ -5,8 +5,6 @@
 package relay
 
 import (
-	"fmt"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -28,9 +26,22 @@ type Proxy struct {
 	Backend HTTPTestServer
 }
 
+// Close shuts down the proxy and blocks until all outstanding requests
+// on this proxy have completed.
+func (p *Proxy) Close() {
+	p.Server.Close()
+}
+
+// Start starts a proxy from NewUnstartedProxy.
+func (p *Proxy) Start() {
+	p.Server.Start()
+}
+
+// TODO: Write test for SetPort().
 // SetPort optionally sets a local port number a Proxy should listen on.
 // It should be set on an unstarted proxy only.
-func (p *Proxy) SetPort(port string) {
+/*
+func (p *Proxy) setPort(port string) {
 	l, err := net.Listen("tcp", "127.0.0.1:" + port)
 	if err != nil {
 		if l, err = net.Listen("tcp6", "[::1]:" + port); err != nil {
@@ -39,6 +50,7 @@ func (p *Proxy) SetPort(port string) {
 	}
 	p.Server.Listener = l
 }
+*/
 
 // NewUnstartedProxy Start an unstarted proxy instance.
 func NewUnstartedProxy(latency time.Duration, backend HTTPTestServer) *Proxy {

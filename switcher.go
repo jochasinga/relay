@@ -1,8 +1,6 @@
 package relay
 
 import (
-	"fmt"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -23,9 +21,22 @@ var (
 	mutex = &sync.Mutex{}
 )
 
+// Close shuts down the switcher and blocks until all outstanding requests
+// on this switcher have completed.
+func (sw *Switcher) Close() {
+	sw.Server.Close()
+}
+
+// Start starts a switcher from NewUnstartedSwitcher.
+func (sw *Switcher) Start() {
+	sw.Server.Start()
+}
+
+// TODO: Write test for SetPort()
 // SetPort optionally sets a local port number a Switcher should listen on.
 // It should be set on an unstarted switcher only.
-func (s *Switcher) SetPort(port string) {
+/*
+func (s *Switcher) setPort(port string) {
 	l, err := net.Listen("tcp", "127.0.0.1:" + port)
 	if err != nil {
 		if l, err = net.Listen("tcp6", "[::1]:" + port); err != nil {
@@ -34,6 +45,7 @@ func (s *Switcher) SetPort(port string) {
 	}
 	s.Listener = l
 }
+*/
 
 // backendGenerator keeps track of the backend servers circulation.
 func backendGenerator(backends []HTTPTestServer) <-chan HTTPTestServer {

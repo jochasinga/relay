@@ -3,31 +3,23 @@
 // license that can be found in the LICENSE file.
 
 /*
-Overview
---------
 Package relay is a standard `httptest.Server` on steroid for end-to-end HTTP testing.
 It implements the test server with a delay middleware to simulate latency before
 the target test server's handler.
 
-Relay consists of two components, `Proxy` and `Switcher`. They are HTTP Servers
-(`httptest.Server`) listening on a system-chosen port on the local loopback 
-interface, for use in end-to-end HTTP tests.                                             
+Relay consists of two components, a Proxy and Switcher. They are HTTP middlewares
+which wrap the target httptest.Server's handler, thus behaving like a proxy server.
+It is used with httptest.Server to simulate latent proxy servers or load balancers
+for use in end-to-end HTTP tests.                                             
 
-Proxy
------
-`Proxy` is used to place before of any `HTTPTestServer` (`httptest.Server`, 
-`Proxy`, or `Switcher`) to simulate a proxy server or a connection with some 
-network, I/O or CPU latency. It takes a latency unit in `time.Duration` and 
-a backend `HTTPTestServer` as arguments.
+Proxy can be placed before a HTTPTestServer (httptest.Server, 
+Proxy, or Switcher) to simulate a proxy server or a connection with some 
+latency. It takes a latency unit and a backend HTTPTestServer as arguments.
 
-Switcher
---------
-`Switcher` is a basic round-robin-style proxy which takes a latency unit
-in `time.Duration` and a `[]HTTPTestServer` to which it will
-circulate requests.
+Switcher behaves similarly to a proxy, but with each request it switches 
+between several test servers in a round-robin fashion. Switcher takes
+a latency unit and a []HTTPTestServer to which it will circulate requests.
 
-Examples
---------
 Let's begin setting up a basic `httptest.Server` to send request to.
 
         var handler = func(w http.ResponseWriter, r *http.Request) {
@@ -46,13 +38,10 @@ Let's begin setting up a basic `httptest.Server` to send request to.
 Now, let's use Proxy to simulate a slow connection through which a HTTP request
 can be sent to the test server.
 
-        // Connection takes 4s to and from the test server
         delay := time.Duration(2) * time.Second
-        // Client takes 3s before timing out.
         timeout = time.Duration(3) * time.Second
-        // Create a new proxy with a delay and test server backend
         conn := relay.NewProxy(delay, ts)
-        client := &Client{ Timeout: timeout }
+        client := &Client{Timeout: timeout}
         start := time.Now()
         _, _ = client.Get(conn.URL)
         elapsed := time.Since(start)
@@ -64,8 +53,8 @@ can be sent to the test server.
 
 Note that the latency will double because of the round trip to and from the server.
 
-`Proxy` can be placed in front of another proxy, and vice versa. So you can create a 
-chain of test proxies this way:
+Proxy can be placed in front of another proxy, and vice versa. So you can create a 
+chain of proxies this way:
 
         delay := time.Duration(1) * time.Second
         ts := httptest.NewServer(http.HandlerFunc(handler))
@@ -81,8 +70,7 @@ chain of test proxies this way:
 
 Each hop to and from the target server will be delayed for one second.
 
-`Switcher` works similarly to a proxy, except it "switches" between several backend servers
-for each request in a round-robin fashion.
+Switcher can be used instead of Proxy to simulate a round-robin load-balancing proxy or just to switch between several test servers' handlers for convenience.
 
         ts1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
                        fmt.Fprint(w, "Hello world!")
@@ -99,7 +87,7 @@ for each request in a round-robin fashion.
         resp1, _ := http.Get(sw.URL) // hits ts1
         resp2, _ := http.Get(sw.URL) // hits ts2
         resp3, _ := http.Get(sw.URL) // hits p, which eventually hits ts3
-        resp4, _ := http.Get(sw.URL) // hits ts1 again
+        resp4, _ := http.Get(sw.URL) // hits ts1 again, and so on
 */
 package relay
 

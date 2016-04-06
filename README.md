@@ -1,7 +1,7 @@
 relay
 =====
 
-[![GoDoc](https://godoc.org/github.com/jochasinga/relay?status.svg)](https://godoc.org/github.com/jochasinga/relay)  [![Build Status](https://drone.io/github.com/jochasinga/relay/status.png)](https://drone.io/github.com/jochasinga/relay/latest)  [![Coverage Status](https://coveralls.io/repos/github/jochasinga/relay/badge.svg?branch=master)](https://coveralls.io/github/jochasinga/relay?branch=master)
+[![GoDoc](https://godoc.org/github.com/jochasinga/relay?status.svg)](https://godoc.org/github.com/jochasinga/relay)  [![Build Status](https://drone.io/github.com/jochasinga/relay/status.png)](https://drone.io/github.com/jochasinga/relay/latest)  [![Coverage Status](https://coveralls.io/repos/github/jochasinga/relay/badge.svg?branch=master)](https://coveralls.io/github/jochasinga/relay?branch=master)  [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=jochasinga&url=https://github.com/jochasinga/relay&title=Relay&language=English&tags=github&category=software)
 
 Powered up Go HTTP Server for comprehensive end-to-end HTTP tests.
 
@@ -74,13 +74,13 @@ Switcher
 
 ```go
 
-ts1 := httptest.New(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+ts1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	    fmt.Fprint(w, "Hello world!")
 }))
-ts2 := httptest.New(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+ts2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	    fmt.Fprint(w, "Hello mars!")
 }))
-ts3 := httptest.New(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+ts3 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	    fmt.Fprint(w, "Hello pluto!")
 }))
 
@@ -94,6 +94,8 @@ resp3, _ := http.Get(sw.URL) // hits p, which eventually hits ts3
 resp4, _ := http.Get(sw.URL) // hits ts1
 
 ```
+
+Also please check out this [introduction on Medium](https://medium.com/code-zen/go-http-test-with-relay-deade218fd3d#.ka0a2x19z).
 
 TODO
 ----

@@ -1,5 +1,5 @@
-relay
-=====
+![relay](https://maxcdn.icons8.com/windows10/PNG/32/Industry/relay-32.png) relay
+================================================================================
 
 [![GoDoc](https://godoc.org/github.com/jochasinga/relay?status.svg)](https://godoc.org/github.com/jochasinga/relay)  [![Build Status](https://drone.io/github.com/jochasinga/relay/status.png)](https://drone.io/github.com/jochasinga/relay/latest)  [![Coverage Status](https://coveralls.io/repos/github/jochasinga/relay/badge.svg?branch=master)](https://coveralls.io/github/jochasinga/relay?branch=master)  [![Donate](https://img.shields.io/badge/donate-$1-yellow.svg)](https://www.paypal.me/jochasinga/1.00)
 

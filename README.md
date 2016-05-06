@@ -1,18 +1,18 @@
 relay
 =====
 
-[![GoDoc](https://godoc.org/github.com/jochasinga/relay?status.svg)](https://godoc.org/github.com/jochasinga/relay)  [![Build Status](https://drone.io/github.com/jochasinga/relay/status.png)](https://drone.io/github.com/jochasinga/relay/latest)  [![Coverage Status](https://coveralls.io/repos/github/jochasinga/relay/badge.svg?branch=master)](https://coveralls.io/github/jochasinga/relay?branch=master)  [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=jochasinga&url=https://github.com/jochasinga/relay&title=Relay&language=English&tags=github&category=software)
+[![GoDoc](https://godoc.org/github.com/jochasinga/relay?status.svg)](https://godoc.org/github.com/jochasinga/relay)  [![Build Status](https://drone.io/github.com/jochasinga/relay/status.png)](https://drone.io/github.com/jochasinga/relay/latest)  [![Coverage Status](https://coveralls.io/repos/github/jochasinga/relay/badge.svg?branch=master)](https://coveralls.io/github/jochasinga/relay?branch=master)  [![Donate](https://img.shields.io/badge/donate-$1-yellow.svg)](https://www.paypal.me/jochasinga/1.00)
 
 Powered up Go HTTP Server for comprehensive end-to-end HTTP tests.
 
 **Relay** consists of two components, `Proxy` and `Switcher`. They are both
-HTTP [middlewares](https://justinas.org/writing-http-middleware-in-go/) which 
-wrap around the target server's handler to simulate latent connections, proxy 
+HTTP [middlewares](https://justinas.org/writing-http-middleware-in-go/) which
+wrap around the target server's handler to simulate latent connections, proxy
 servers, or load balancers.
 
 Usage
 -----
-To use `relay` in your test, install with 
+To use `relay` in your test, install with
 
 ```bash
 
@@ -24,19 +24,19 @@ Or better, use a [package manager](https://github.com/golang/go/wiki/PackageMana
 
 HTTPTestServer
 --------------
-Every instance, including the standard `httptest.Server`, implements `HTTPTestServer` 
+Every instance, including the standard `httptest.Server`, implements `HTTPTestServer`
 interface, which means that they can be used interchangeably as a general "server".
 
 Proxy
 -----
 A `Proxy` is used to place in front of any `HTTPTestServer` (`httptest.Server`,
 `Proxy`, or `Switcher`) to simulate a proxy server or a connection with some
-network latency. It takes a latency unit in `time.Duration` and a backend 
+network latency. It takes a latency unit in `time.Duration` and a backend
 `HTTPTestServer` as arguments.
 
 Switcher
 --------
-`Switcher` works similarly to `Proxy`, except with each request it "switches" between 
+`Switcher` works similarly to `Proxy`, except with each request it "switches" between
 several backend `HTTPTestServer` in a round-robin fashion.
 
 Examples
@@ -82,10 +82,10 @@ if elapsed >= timeout + deviation {
 }
 
 ```
-Note that the latency will double because of the round trip to and 
+Note that the latency will double because of the round trip to and
 from the server.
 
-`Proxy` can be placed in front of another proxy, and vice versa. So you 
+`Proxy` can be placed in front of another proxy, and vice versa. So you
 can create a chain of test proxies this way:
 
 ```go
@@ -105,7 +105,7 @@ if elapsed >= (time.Duration * 6) + deviation {
 
 ```
 
-In the above code, Each hop to and from the target server `ts` will be delayed 
+In the above code, Each hop to and from the target server `ts` will be delayed
 for one second, total to six seconds of latency.
 
 `Switcher` can be used instead of `Proxy` to simulate a round-robin load-balancing proxy
@@ -145,7 +145,7 @@ TODO
 
 CONTRIBUTE
 ----------
-Please feel free to open an issue or send a pull request. 
+Feel free to open an issue or send a pull request.
 Please see [goconvey](https://github.com/smartystreets/goconvey) on how to write BDD tests for relay.
 Contact me on twitter [@jochasinga](http://twitter.com).
-Fuel me with high-quality caffeine to continue working on cool code -> [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=jochasinga&url=https://github.com/jochasinga/relay&title=Relay&language=English&tags=github&category=software)
+Fuel me with high-quality caffeine to continue working on cool code -> [![Donate](https://img.shields.io/badge/donate-$3-yellow.svg)](https://www.paypal.me/jochasinga/3.00)

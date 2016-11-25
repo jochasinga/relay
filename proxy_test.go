@@ -7,118 +7,83 @@ import (
 	"net/http/httptest"
 	"time"
 	"testing"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/assert"
 )
 
-var helloHandler = func(w http.ResponseWriter, r *http.Request) {
+var helloHandlerFunc = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Hello client!")
+})
+
+func TestStartingAndClosingProxy(t *testing.T) {
+	delay := time.Duration(0)
+	backend := httptest.NewServer(helloHandlerFunc)
+
+	proxy := NewUnstartedProxy(delay, backend)
+	proxy.Start()
+
+	resp, _ := http.Get(proxy.URL)
+	assert.NotNil(t, resp, "Response should not be empty")
+
+	proxy.Close()
+	_, err := http.Get(proxy.URL)
+	assert.NotNil(t, err, "Error should not be empty")
 }
 
-func TestBasicProxyUtility(t *testing.T) {
-	Convey("GIVEN an unstarted proxy", t, func() {
-		delay := time.Duration(0)
-		ts := httptest.NewServer(http.HandlerFunc(helloHandler))
-		p := NewUnstartedProxy(delay, ts)
-		Convey("WITH a call to `Start()`", func() {
-			p.Start()
-			Convey("EXPECT proxy to be running", func() {
-				resp, _ := http.Get(p.URL)
-				So(resp, ShouldNotBeNil)
-			})
-		})
-		Convey("WITH a call to `Close()`", func() {
-			p.Close()
-			Convey("EXPECT proxy to be closed", func() {
-				_, err := http.Get(p.URL)
-				So(err, ShouldNotBeNil)
-			})
-		})
-		Reset(func() {
-			ts.Close()
-			p.Close()
-		})
-	})
+func TestProxyConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	backend := httptest.NewServer(helloHandlerFunc)
+	latency := time.Duration(0)
+	
+	proxy := NewProxy(latency, backend)
+	defer proxy.Close()
+
+	resp, err := http.Get(proxy.URL)
+	assert.Nil(err, "Error should be empty")
+
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err, "Error should be empty")
+
+	assert.Equal("Hello client!", string(body), "Response text should be \"Hello client!\"")
 }
 
-func TestBasicProxyConnection(t *testing.T) {
-	Convey("GIVEN a back-end server", t, func() {
-		ts := httptest.NewServer(http.HandlerFunc(helloHandler))
-		
-		Convey("GIVEN a default front-end proxy", func() {
-			latency := time.Duration(0) * time.Second
-			proxy := NewProxy(latency, ts)
-			Convey("WITH a basic GET request to the front-end proxy", func() {
-				resp, err := http.Get(proxy.URL)
-				if err != nil {
-					t.Error(err)
-				}
-				Convey("EXPECT error to be nil", func() {
-					So(err, ShouldBeNil)
-				})
-				Convey("EXPECT response to be `Hello client!`", func() {
-					b, err := ioutil.ReadAll(resp.Body)
-					if err != nil {
-						t.Error(err)
-					}
-					So(string(b), ShouldEqual, "Hello client!")
-				})
-			})
-			Reset(func() {
-				proxy.Close()
-			})
-		})
-		
-		Convey("GIVEN a front-proxy with a set port", func() {
-			latency := time.Duration(0) * time.Second
-			proxy := NewUnstartedProxy(latency, ts)
-			proxy.Start()
-			Convey("WITH a basic GET request to the front-end proxy", func() {
-				resp, err := http.Get(proxy.URL)
-				Convey("EXPECT error to be nil", func() {
-					So(err, ShouldBeNil)
-				})
-				Convey("EXPECT response to be `Hello client!`", func() {
-					b, err := ioutil.ReadAll(resp.Body)
-					if err != nil {
-						t.Error(err)
-					}
-					So(string(b), ShouldEqual, "Hello client!")
-				})
-			})
-			Reset(func() {
-				proxy.Close()
-			})
-		})
-		
-		Convey("GIVEN several proxies put in front", func() {
-			latency := time.Duration(0) * time.Second
-			proxy3 := NewProxy(latency, ts)
-			proxy2 := NewProxy(latency, proxy3)
-			proxy1 := NewProxy(latency, proxy2)
-			Convey("WITH a basic GET request to the front-most proxy", func() {
-				resp, err := http.Get(proxy1.URL)
-				Convey("EXPECT error to be nil", func() {
-					So(err, ShouldBeNil)
-				})
-				Convey("EXPECT response to be `Hello client!`", func() {
-					b, err := ioutil.ReadAll(resp.Body)
-					if err != nil {
-						t.Error(err)
-					}
-					So(string(b), ShouldEqual, "Hello client!")
-				})
-			})
-			Reset(func() {
-				proxy1.Close()
-				proxy2.Close()
-				proxy3.Close()
-			})
-		})
-		
-		Reset(func() {
-			ts.Close()
-		})
-	})
+func TestUnstartedProxyConnection(t *testing.T) {
+	assert := assert.New(t)
+	
+	backend := httptest.NewServer(helloHandlerFunc)
+	latency := time.Duration(0) 
+	proxy := NewUnstartedProxy(latency, backend)
+	proxy.Start()
+	defer proxy.Close()
+
+	resp, err := http.Get(proxy.URL)
+	assert.Nil(err, "Error should be empty")
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	assert.Equal("Hello client!", string(body), "Response text should be \"Hello client!\"")
+}
+
+func TestMultipleProxies(t *testing.T) {
+	assert := assert.New(t)
+	
+	backend := httptest.NewServer(helloHandlerFunc)
+	latency := time.Duration(0) * time.Second
+	proxy3 := NewProxy(latency, backend)
+	proxy2 := NewProxy(latency, proxy3)
+	proxy1 := NewProxy(latency, proxy2)
+
+	defer func() {
+		proxy3.Close()
+		proxy2.Close()
+		proxy1.Close()
+	}()
+
+	// Send request to the front-most proxy
+	resp, err := http.Get(proxy1.URL)
+	assert.Nil(err, "Error should be empty")
+	
+	body, _ := ioutil.ReadAll(resp.Body)
+	assert.Equal("Hello client!", string(body), "Response text should be \"Hello client!\"")
 }
 
 

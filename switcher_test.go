@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"time"
 	"testing"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -25,7 +26,7 @@ var (
 func TestBasicSwitcherUtility(t *testing.T) {
 	Convey("GIVEN an unstarted switcher", t, func() {
 		delay := time.Duration(0)
-		ts := httptest.NewServer(http.HandlerFunc(helloHandler))
+		ts := httptest.NewServer(helloHandlerFunc)
 		sw := NewUnstartedSwitcher(delay, []HTTPTestServer{ ts })
 		Convey("WITH a call to `Start()`", func() {
 			sw.Start()
